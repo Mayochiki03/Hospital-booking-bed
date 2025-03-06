@@ -1,117 +1,193 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-const wardBeds = {
-  ICU: [
-    { id: "ICU01", occupied: true },
-    { id: "ICU02", occupied: false },
-    { id: "ICU03", occupied: true, special: true },
-    { id: "ICU04", occupied: true },
-    { id: "ICU05", occupied: true },
-    { id: "ICU06", occupied: false },
-    { id: "ICU07", occupied: true },
-    { id: "ICU08", occupied: false },
-  ],
-  ER: [
-    { id: "ER01", occupied: false },
-    { id: "ER02", occupied: true },
-    { id: "ER03", occupied: true, special: true },
-    { id: "ER04", occupied: false },
-  ],
-  General: [
-    { id: "G01", occupied: false },
-    { id: "G02", occupied: true },
-  ],
-  Pediatric: [
-    { id: "P01", occupied: false, special: true },
-    { id: "P02", occupied: false },
-  ],
-  Surgical: [
-    { id: "S01", occupied: true },
-    { id: "S02", occupied: false },
-  ],
-};
-
-const wards = Object.keys(wardBeds);
+import { useOutletContext } from "react-router-dom";
+import { wardBeds } from "../data/wardBeds";
+import WardSelector from "../components/WardSelector";
+import BedManagementPanel from "../components/BedManagementPanel";
 
 const Status = () => {
-  const navigate = useNavigate();
-  const [ward, setWard] = useState("ICU");
-  const [beds, setBeds] = useState(wardBeds["ICU"]);
-  const [showWardDropdown, setShowWardDropdown] = useState(false);
+  const { wardsData, setWardsData } = useOutletContext<{
+    wardsData: typeof wardBeds;
+    setWardsData: React.Dispatch<React.SetStateAction<typeof wardBeds>>;
+  }>();
 
-  const handleWardChange = (newWard: keyof typeof wardBeds) => {
+  const [ward, setWard] = useState<keyof typeof wardsData>("ICU");
+  const [beds, setBeds] = useState(wardsData[ward]);
+  const [showBedManagement, setShowBedManagement] = useState(false);
+  const [selectedBed, setSelectedBed] = useState<{
+    id: string;
+    occupied: boolean;
+    special?: boolean;
+    patientStatus: string;
+  } | null>(null);
+  const [newBedId, setNewBedId] = useState("");
+  const [deleteMode, setDeleteMode] = useState(false);
+
+  // สถานะของเตียง
+  const [selectedBedStatus, setSelectedBedStatus] = useState<"ว่าง" | "ไม่ว่าง" | null>(null);
+
+  // สถานะของผู้ป่วย
+  const [selectedPatientStatus, setSelectedPatientStatus] = useState<
+    "หนัก" | "กำลังให้การรักษา (CI)" | "กำลังให้การรักษา (SI)" | "กำลังให้การรักษา (MI)" | "รอกลับบ้าน (CL)" | null
+  >(null);
+
+  const handleWardChange = (newWard: keyof typeof wardsData) => {
     setWard(newWard);
-    setBeds(wardBeds[newWard]); // เปลี่ยนเตียงตาม ward
-    setShowWardDropdown(false);
+    setBeds(wardsData[newWard]);
+  };
+
+  const addBed = () => {
+    if (newBedId.trim()) {
+      const newBed = { id: newBedId, occupied: false, patientStatus: "red" };
+      const updatedBeds = [...beds, newBed];
+      updatedBeds.sort((a, b) => a.id.localeCompare(b.id));
+      setBeds(updatedBeds);
+      setNewBedId("");
+    }
+  };
+
+  const removeBed = (bedId: string) => {
+    setBeds(beds.filter((bed) => bed.id !== bedId));
+  };
+
+  const openBedManagement = (bed: {
+    id: string;
+    occupied: boolean;
+    special?: boolean;
+    patientStatus: string;
+  }) => {
+    setSelectedBed(bed);
+    setSelectedBedStatus(bed.occupied ? "ไม่ว่าง" : "ว่าง");
+    setSelectedPatientStatus(bed.patientStatus as any);
+    setShowBedManagement(true);
+  };
+
+  const closeBedManagement = () => {
+    setSelectedBed(null);
+    setShowBedManagement(false);
+    setSelectedBedStatus(null);
+    setSelectedPatientStatus(null);
+  };
+
+  const handleBedStatusChange = (status: "ว่าง" | "ไม่ว่าง" | null) => {
+    setSelectedBedStatus(status);
+  };
+
+  const handlePatientStatusChange = (
+    status: "หนัก" | "กำลังให้การรักษา (CI)" | "กำลังให้การรักษา (SI)" | "กำลังให้การรักษา (MI)" | "รอกลับบ้าน (CL)" | null
+  ) => {
+    setSelectedPatientStatus(status);
+  };
+
+  const handleSave = () => {
+    if (selectedBed && selectedBedStatus !== null && selectedPatientStatus !== null) {
+      setBeds(
+        beds.map((bed) =>
+          bed.id === selectedBed.id
+            ? {
+                ...bed,
+                occupied: selectedBedStatus === "ไม่ว่าง", // ถ้าสถานะเป็น "ไม่ว่าง" ให้เตียงไม่ว่าง
+                patientStatus: selectedPatientStatus, // ตั้งค่าสถานะผู้ป่วย
+              }
+            : bed
+        )
+      );
+      closeBedManagement();
+    }
+  };
+
+  const getBackgroundColor = (status: string) => {
+    switch (status) {
+      case "red":
+        return "bg-red-500";
+      case "pink":
+        return "bg-pink-500";
+      case "yellow":
+        return "bg-yellow-500";
+      case "green":
+        return "bg-green-500";
+      case "white":
+        return "bg-white";
+      default:
+        return "bg-white";
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-4">
-      <nav className="bg-black text-white p-4 w-full flex justify-between fixed top-0 left-0 right-0 z-50 shadow-lg">
-        <div className="text-lg font-bold">Bed Management System</div>
-        <div className="space-x-4">
-          <button className="px-4 py-2" onClick={() => navigate("/")}>Home</button>
-          <button className="px-4 py-2" onClick={() => navigate("/manage")}>Manage</button>
-          <button className="px-4 py-2">Book</button>
-          <button className="px-4 py-2 bg-gray-800 rounded">Status</button>
-          <button className="px-4 py-2">Logout</button>
-        </div>
-      </nav>
-
-      <div className="flex flex-col items-start mt-20 w-full max-w-screen-lg pl-8">
-        <div className="flex items-center">
-          <img
-            src="/public/images/Hospital-logo.jpg"
-            alt="Hospital Logo"
-            className="w-40 h-40 rounded-full border-4 border-gray-300"
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
+      <div className="relative bg-white shadow-lg rounded-lg p-6 border w-full max-w-4xl">
+        <div className="flex gap-2 mb-6">
+          <input
+            type="text"
+            value={newBedId}
+            onChange={(e) => setNewBedId(e.target.value)}
+            placeholder="New Bed ID"
+            className="p-3 border rounded-lg w-full max-w-xs"
           />
-          <h1 className="text-xl font-bold ml-4">โรงพยาบาล ส่งเสริมสุขภาพ</h1>
-        </div>
-      </div>
-
-      <div className="relative bg-white shadow-md rounded-md p-4 border border-gray-300 w-full max-w-lg mt-6">
-        <div className="relative">
           <button
-            className="text-lg font-semibold bg-white px-4 py-2 shadow rounded-md w-full text-left border border-gray-300"
-            onClick={() => setShowWardDropdown(!showWardDropdown)}
+            onClick={addBed}
+            className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
           >
-            Ward: {ward} ▼
+            Add Bed
           </button>
-          {showWardDropdown && (
-            <div className="absolute left-0 w-full bg-white shadow-md border border-gray-300 mt-1 rounded-md z-10">
-              {wards.map((w) => (
-                <button
-                  key={w}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-200"
-                  onClick={() => handleWardChange(w as keyof typeof wardBeds)}
-                >
-                  {w}
-                </button>
-              ))}
-            </div>
-          )}
+          <button
+            onClick={() => setDeleteMode(!deleteMode)}
+            className={`p-3 rounded-lg ${deleteMode ? "bg-red-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`}
+          >
+            {deleteMode ? "Cancel Delete" : "Delete Mode"}
+          </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap justify-center gap-4 p-4 border rounded-md">
-          {beds.map((bed) => (
-            <div
-              key={bed.id}
-              className={`w-24 h-24 flex flex-col items-center justify-center text-white rounded-md shadow-md text-sm font-semibold p-2 transition-all duration-300 ${
-                bed.special
-                  ? "bg-pink-500"
-                  : bed.occupied
-                  ? "bg-red-500"
-                  : "bg-green-500 text-white"
-              }`}
-            >
-              <span className="text-lg">👤</span>
-              เตียง {bed.id}
-            </div>
-          ))}
+        <div className="flex flex-col gap-4">
+          <WardSelector
+            currentWard={ward}
+            wards={Object.keys(wardsData)}
+            onWardChange={handleWardChange}
+          />
+
+          <div className="grid grid-cols-4 gap-6 p-4">
+            {beds.map((bed) => (
+              <div
+                key={bed.id}
+                className={`relative p-6 text-center text-black rounded-xl cursor-pointer shadow-md transition-all duration-300 ${getBackgroundColor(bed.patientStatus)}`}
+                onClick={() => openBedManagement(bed)}
+              >
+                <div className="flex flex-col justify-between h-full">
+                  <div className="flex-grow"></div>
+                  <div className="text-xl">{`เตียง ${bed.id}`}</div>
+                  {deleteMode && (
+                    <button
+                      className="absolute top-1 right-1 p-1 bg-black text-white text-xs rounded-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Are you sure you want to delete ${bed.id}?`)) {
+                          removeBed(bed.id);
+                        }
+                      }}
+                    >
+                      ❌
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
+      <BedManagementPanel
+        selectedBed={selectedBed}
+        show={showBedManagement}
+        onClose={closeBedManagement}
+        onSave={handleSave}
+        selectedBedStatus={selectedBedStatus}
+        onBedStatusChange={handleBedStatusChange}
+        selectedPatientStatus={selectedPatientStatus}
+        onPatientStatusChange={handlePatientStatusChange}
+      />
+
+      {showBedManagement && (
+        <div className="fixed inset-0 bg-black opacity-30 z-40" onClick={closeBedManagement}></div>
+      )}
     </div>
   );
 };

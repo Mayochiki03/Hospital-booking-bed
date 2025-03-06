@@ -1,39 +1,62 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // สำหรับเปลี่ยนหน้า
+  const [showPanel, setShowPanel] = useState(false); // State สำหรับควบคุม Panel
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-4">
-      <nav className="bg-black text-white p-4 w-full flex justify-between fixed top-0 left-0 right-0 z-50 shadow-lg">
-        <div className="text-lg font-bold">Bed Management System</div>
-        <div className="space-x-4">
-          <button className="px-4 py-2 bg-gray-800 rounded">Home</button>
-          <button className="px-4 py-2" onClick={() => navigate("/manage")}>
-            Manage
-          </button>
-          <button className="px-4 py-2">Book</button>
-          <button className="px-4 py-2" onClick={() => navigate("/status")}>
-            Status
-          </button>
-          <button className="px-4 py-2">Logout</button>
-        </div>
-      </nav>
-
-      {/* โลโก้และข้อความจะอยู่ที่ซ้ายสุดของหน้า */}
+      {/* โลโก้และชื่อโรงพยาบาล */}
       <div className="absolute top-20 left-4 flex items-center">
-        <img
-          src="/public/images/Hospital-logo.jpg"
-          alt="Hospital Logo"
-          className="w-48 h-48 rounded-full border-4 border-gray-300"
-        />
-        <h1 className="text-xl font-bold ml-4">โรงพยาบาล ส่งเสริมสุขภาพ</h1>
+        {/* เพิ่มโลโก้หรือชื่อโรงพยาบาลที่นี่ */}
       </div>
 
+      {/* เนื้อหาหลัก */}
       <div className="flex flex-col items-center mt-40">
         <h1 className="text-2xl font-bold">Home Pages</h1>
         <p className="mt-2 text-gray-600">This is the management section.</p>
+        <button
+          onClick={() => setShowPanel(true)}
+          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+        >
+          Open Panel
+        </button>
       </div>
+
+      {/* Slide-in Panel */}
+      <div
+        className={`fixed top-0 right-0 w-1/3 h-full bg-white shadow-2xl border-l-2 border-gray-300 p-6 transform ${
+          showPanel ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+        } transition-all duration-500 ease-in-out z-50`}
+        style={{ willChange: 'transform, opacity' }}
+      >
+        <h2 className="text-xl font-bold mb-4">Panel Title</h2>
+        <p>รายละเอียดเพิ่มเติม...</p>
+
+        {/* ปุ่มปิด Panel */}
+        <button
+          onClick={() => setShowPanel(false)}
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
+        >
+          Close
+        </button>
+      </div>
+
+      {/* Overlay สำหรับคลิกปิด Panel */}
+      {showPanel && (
+        <div
+          role="button"
+          tabIndex={0}
+          className="fixed inset-0 bg-black opacity-30 z-40"
+          onClick={() => setShowPanel(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              setShowPanel(false);
+            }
+          }}
+        ></div>
+      )}
     </div>
   );
 };

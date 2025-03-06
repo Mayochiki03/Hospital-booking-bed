@@ -1,20 +1,21 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "../pages/Home";
-import Booking from "../pages/Booking";
-import Status from "../pages/Status";
-import Manage from "../pages/Manage";
+import MainLayout from "../layouts/Mainlayout"; // import Layout
+import Home from "../pages/Home"; // import Pages
+import Status from "../pages/Status"; // import Status page
 
-const AppRoutes = () => {
+const AppRouter = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/booking" element={<Booking />} />
-        <Route path="/status" element={<Status />} />
-        <Route path="/manage" element={<Manage />} />
+        {/* Route สำหรับ MainLayout */}
+        <Route path="/" element={<MainLayout />}>
+          {/* Route ภายใน MainLayout */}
+          <Route index element={<Home />} /> {/* หน้าแรก */}
+          <Route path="status" element={<Status />} /> {/* หน้า Status */}
+        </Route>
       </Routes>
     </Router>
   );
 };
 
-export default AppRoutes;
+export default AppRouter;
