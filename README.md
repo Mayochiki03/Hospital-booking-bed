@@ -62,9 +62,3 @@ The system is built using **React.js**, **Tailwind CSS**, **Java Spring Boot**, 
 3. **MySQL** Database running locally or remotely.
 4. **Maven** (for managing backend dependencies).
 
-### Backend Setup (Spring Boot)
-
-1. Clone the repository and navigate to the backend folder.
-2. Install dependencies:
-   ```bash
-   mvn clean install
