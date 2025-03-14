@@ -1,4 +1,4 @@
-# Hospital Bed Booking System
+# Mini Project Hospital Bed Booking System
 
 ## Overview
 
